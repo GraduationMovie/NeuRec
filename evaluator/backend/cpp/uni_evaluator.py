@@ -66,11 +66,13 @@ class UniEvaluator(CPPEvaluator):
         elif isinstance(metric, (set, tuple, list)):
             pass
         else:
-            raise TypeError("The type of 'metric' (%s) is invalid!" % metric.__class__.__name__)
+            raise TypeError("The type of 'metric' (%s) is invalid!" %
+                            metric.__class__.__name__)
 
         for m in metric:
             if m not in metric_dict:
-                raise ValueError("There is not the metric named '%s'!" % metric)
+                raise ValueError(
+                    "There is not the metric named '%s'!" % metric)
 
         self.user_pos_train = user_train_dict
         self.user_pos_test = user_test_dict
@@ -93,7 +95,7 @@ class UniEvaluator(CPPEvaluator):
             str: A string consist of all metrics information， such as
                 `"Precision@10    Precision@20    NDCG@10    NDCG@20"`.
         """
-        metrics_show = ['\t'.join([("%s@"%re_metric_dict[metric] + str(k)).ljust(12) for k in self.top_show])
+        metrics_show = ['\t'.join([("%s@" % re_metric_dict[metric] + str(k)).ljust(12) for k in self.top_show])
                         for metric in self.metrics]
         metric = '\t'.join(metrics_show)
         return "metrics:\t%s" % metric
@@ -113,25 +115,36 @@ class UniEvaluator(CPPEvaluator):
         """
         # B: batch size
         # N: the number of items
-        test_users = test_users if test_users is not None else list(self.user_pos_test.keys())
+        test_users = test_users if test_users is not None else list(
+            self.user_pos_test.keys())
         if not isinstance(test_users, (list, tuple, set, np.ndarray)):
-            raise TypeError("'test_user' must be a list, tuple, set or numpy array!")
+            raise TypeError(
+                "'test_user' must be a list, tuple, set or numpy array!")
 
-        test_users = DataIterator(test_users, batch_size=self.batch_size, shuffle=False, drop_last=False)
+        test_users = DataIterator(
+            test_users, batch_size=self.batch_size, shuffle=False, drop_last=False)
         batch_result = []
         for batch_users in test_users:
             if self.user_neg_test is not None:
-                candidate_items = [list(self.user_pos_test[u]) + self.user_neg_test[u] for u in batch_users]
-                test_items = [set(range(len(self.user_pos_test[u]))) for u in batch_users]
+                candidate_items = [
+                    list(self.user_pos_test[u]) + self.user_neg_test[u] for u in batch_users]
+                test_items = [set(range(len(self.user_pos_test[u])))
+                              for u in batch_users]
 
-                ranking_score = model.predict(batch_users, candidate_items)  # (B,N)
-                ranking_score = pad_sequences(ranking_score, value=-np.inf, dtype=float_type)
+                ranking_score = model.predict(
+                    batch_users, candidate_items)  # (B,N)
+                print("@@@@@@ uni_evaluator.py in CPP IF")
+                ranking_score = pad_sequences(
+                    ranking_score, value=-np.inf, dtype=float_type)
 
                 if not is_ndarray(ranking_score, float_type):
                     ranking_score = np.array(ranking_score, dtype=float_type)
             else:
                 test_items = [self.user_pos_test[u] for u in batch_users]
                 ranking_score = model.predict(batch_users, None)  # (B,N)
+                print("@@@@@@ uni_evaluator.py in CPP ELSE")
+                print(f"@@@@@@ total_length: {len(ranking_score)}")
+                print(f"@@@@@@ first_element_length: {len(ranking_score[0])}")
                 if not is_ndarray(ranking_score, float_type):
                     ranking_score = np.array(ranking_score, dtype=float_type)
 
@@ -147,10 +160,13 @@ class UniEvaluator(CPPEvaluator):
             batch_result.append(result)
 
         # concatenate the batch results to a matrix
-        all_user_result = np.concatenate(batch_result, axis=0)  # (num_users, metrics_num*max_top)
-        final_result = np.mean(all_user_result, axis=0)  # (1, metrics_num*max_top)
+        # (num_users, metrics_num*max_top)
+        all_user_result = np.concatenate(batch_result, axis=0)
+        # (1, metrics_num*max_top)
+        final_result = np.mean(all_user_result, axis=0)
 
-        final_result = np.reshape(final_result, newshape=[self.metrics_num, self.max_top])  # (metrics_num, max_top)
+        final_result = np.reshape(final_result, newshape=[
+                                  self.metrics_num, self.max_top])  # (metrics_num, max_top)
         final_result = final_result[:, self.top_show - 1]
         final_result = np.reshape(final_result, newshape=[-1])
         buf = '\t'.join([("%.8f" % x).ljust(12) for x in final_result])

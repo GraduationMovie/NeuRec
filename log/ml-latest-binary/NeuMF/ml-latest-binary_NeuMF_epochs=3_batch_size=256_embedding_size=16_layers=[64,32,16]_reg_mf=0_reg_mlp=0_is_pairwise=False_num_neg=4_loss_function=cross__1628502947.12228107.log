@@ -1,0 +1,53 @@
+2021-08-09 18:55:47.122: Dataset name: ml-latest-binary
+The number of users: 610
+The number of items: 9724
+The number of ratings: 100836
+Average actions of users: 165.30
+Average actions of items: 10.37
+The sparsity of the dataset: 98.300032%
+2021-08-09 18:55:47.122: 
+
+NeuRec hyperparameters:
+recommender=NeuMF
+config_dir=./conf
+gpu_id=0
+gpu_mem=0.5
+data.input.path=dataset
+data.input.dataset=ml-latest-binary
+data.column.format=UIRT
+data.convert.separator=','
+user_min=0
+item_min=0
+splitter=ratio
+ratio=0.8
+by_time=False
+metric=["Precision", "Recall", "NDCG", "MAP", "MRR"]
+topk=[7, 14, 21]
+group_view=None
+rec.evaluate.neg=0
+test_batch_size=128
+num_thread=8
+
+NeuMF's hyperparameters:
+epochs=3
+batch_size=256
+embedding_size=16
+layers=[64,32,16]
+reg_mf=0
+reg_mlp=0
+is_pairwise=False
+num_neg=4
+loss_function=cross_entropy
+learning_rate=0.001
+learner=adam
+init_method=normal
+stddev=0.01
+verbose=3
+mf_pretrain=pretrain/GMF
+mlp_pretrain=pretrain/MLP
+
+2021-08-09 18:55:47.125: load pretrained params unsuccessful!
+2021-08-09 18:55:47.604: metrics:	Precision@7 	Precision@14	Precision@21	Recall@7    	Recall@14   	Recall@21   	NDCG@7      	NDCG@14     	NDCG@21     	MAP@7       	MAP@14      	MAP@21      	MRR@7       	MRR@14      	MRR@21      
+2021-08-09 18:56:01.614: [iter 1 : loss : 0.534030, time: 13.980245]
+2021-08-09 18:56:14.250: [iter 2 : loss : 0.345168, time: 12.636203]
+2021-08-09 18:56:27.015: [iter 3 : loss : 0.326269, time: 12.764860]

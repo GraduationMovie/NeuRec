@@ -7,6 +7,9 @@ from util import typeassert
 from .cpp_evaluator import CPPEvaluator
 from util.cython.tools import float_type, is_ndarray
 from util import pad_sequences
+import sys
+from datetime import datetime
+import os
 
 
 metric_dict = {"Precision": 1, "Recall": 2, "MAP": 3, "NDCG": 4, "MRR": 5}
@@ -88,6 +91,8 @@ class UniEvaluator(CPPEvaluator):
         else:
             self.top_show = np.sort(top_k)
 
+        self.user_id_count = 0
+
     def metrics_info(self):
         """Get all metrics information.
 
@@ -124,6 +129,14 @@ class UniEvaluator(CPPEvaluator):
         test_users = DataIterator(
             test_users, batch_size=self.batch_size, shuffle=False, drop_last=False)
         batch_result = []
+
+        # ================================
+        current_time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        output_file = open(
+            f"./dataset/_tmp_ml-latest-binary/{current_time}.raw", "w")
+        print("@@@@@ opened new output file.")
+        # ================================
+
         for batch_users in test_users:
             if self.user_neg_test is not None:
                 candidate_items = [
@@ -145,6 +158,11 @@ class UniEvaluator(CPPEvaluator):
                 print("@@@@@@ uni_evaluator.py in CPP ELSE")
                 print(f"@@@@@@ total_length: {len(ranking_score)}")
                 print(f"@@@@@@ first_element_length: {len(ranking_score[0])}")
+
+                # ================================
+                self.make_recommendation_file(output_file, ranking_score)
+                # ================================
+
                 if not is_ndarray(ranking_score, float_type):
                     ranking_score = np.array(ranking_score, dtype=float_type)
 
@@ -171,3 +189,19 @@ class UniEvaluator(CPPEvaluator):
         final_result = np.reshape(final_result, newshape=[-1])
         buf = '\t'.join([("%.8f" % x).ljust(12) for x in final_result])
         return buf
+
+    def make_recommendation_file(self, file, matrix):
+        print(f"@@@@@@@@@@ start with user_id [{self.user_id_count}]")
+        for row in matrix:
+            row_with_index = np.array([(idx, row[idx])
+                                       for idx in range(len(row))])
+            # sorted = np.sort(row_with_index, key=lambda item: item[1])[::-1]
+            sorted = row_with_index[row_with_index[:, 1].argsort()[::-1]]
+            top_21 = sorted[:21]
+
+            user_id = self.user_id_count
+            items = [int(item[0]) for item in top_21]
+            line = f"{user_id}: {str(items).replace('[', '').replace(']', '')}\n"
+
+            file.write(line)
+            self.user_id_count = self.user_id_count + 1

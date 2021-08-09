@@ -130,7 +130,6 @@ class UniEvaluator(AbstractEvaluator):
 
                 ranking_score = model.predict(
                     batch_users, candidate_items)  # (B,N)
-                print("@@@@@@ uni_evaluator.py IF")
                 ranking_score = pad_sequences(
                     ranking_score, value=-np.inf, dtype=np.float32)
 
@@ -138,7 +137,6 @@ class UniEvaluator(AbstractEvaluator):
             else:
                 test_items = [self.user_pos_test[u] for u in batch_users]
                 ranking_score = model.predict(batch_users, None)  # (B,N)
-                print("@@@@@@ uni_evaluator.py ELSE")
                 ranking_score = np.array(ranking_score)
 
                 # set the ranking scores of training items to -inf,
